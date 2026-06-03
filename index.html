@@ -165,7 +165,7 @@
     <section class="page inside" aria-label="Dettagli invito"></section>
     <section class="page front" aria-label="Busta, clicca per aprire"></section>
 
-    <audio id="bgMusic" src="assets/musica-ritornello.mp3" loop preload="auto"></audio>
+    <audio id="bgMusic" src="assets/musica-ritornello.mp3" loop preload="auto" autoplay muted playsinline></audio>
     <button class="music-btn" id="musicBtn" type="button" aria-label="Avvia o stoppa la musica"><span class="music-note">♪</span></button>
 
     <button class="open-zone" id="openInvite" type="button" aria-label="Clicca la busta per aprire">Apri</button>
@@ -175,6 +175,7 @@
   </main>
 
   <script>
+
     const card = document.getElementById('invito');
     const music = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicBtn');
@@ -183,38 +184,68 @@
       musicBtn.classList.toggle('playing', !music.paused);
     }
 
+    async function startMusicAutomatically() {
+      try {
+        await music.play();
+
+        // unmute shortly after autoplay starts
+        setTimeout(() => {
+          music.muted = false;
+        }, 300);
+
+      } catch (e) {
+        console.log('Autoplay bloccato dal browser');
+      }
+      updateMusicButton();
+    }
+
     async function toggleMusic(event) {
       event.stopPropagation();
+
       if (music.paused) {
-        try { await music.play(); } catch (e) {}
+        try {
+          music.muted = false;
+          await music.play();
+        } catch (e) {}
       } else {
         music.pause();
       }
+
       updateMusicButton();
     }
 
     musicBtn.addEventListener('click', toggleMusic);
 
+    window.addEventListener('load', startMusicAutomatically);
+
     document.getElementById('openInvite').addEventListener('click', async () => {
       card.classList.add('opened');
+
       if (music.paused) {
-        try { await music.play(); } catch (e) {}
+        try {
+          music.muted = false;
+          await music.play();
+        } catch (e) {}
       }
+
       updateMusicButton();
     });
 
-    document.getElementById('backInvite').addEventListener('click', () => card.classList.remove('opened'));
+    document.getElementById('backInvite').addEventListener('click', () => {
+      card.classList.remove('opened');
+    });
 
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') card.classList.remove('opened');
+      if (event.key === 'Escape') {
+        card.classList.remove('opened');
+      }
     });
 
     music.addEventListener('play', updateMusicButton);
     music.addEventListener('pause', updateMusicButton);
-    music.addEventListener('ended', updateMusicButton);
-    updateMusicButton();
-  </script>
-</body>
-</html>
 
-</html>
+    updateMusicButton();
+
+</script>
+</body>
+</html>tml>
