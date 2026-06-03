@@ -60,7 +60,6 @@
       opacity: 1;
       transform: scale(1);
     }
-    /* Prima schermata: cliccabile solo la busta */
     .open-zone {
       position: absolute;
       left: 15%;
@@ -75,10 +74,41 @@
       font-size: 0;
       color: transparent;
     }
-    .opened .open-zone {
-      display: none;
+    .opened .open-zone { display: none; }
+
+    .music-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 8;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(255,255,255,.55);
+      background: rgba(0,0,0,.38);
+      color: #fff;
+      border-radius: 50%;
+      padding: 0;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      display: grid;
+      place-items: center;
     }
-    /* Seconda schermata: aree invisibili sui due loghi già presenti nel disegno */
+    .music-note {
+      display: inline-block;
+      font: 700 22px/1 Georgia, serif;
+      transform-origin: 50% 50%;
+    }
+    .music-btn.playing {
+      background: rgba(255,255,255,.22);
+    }
+    .music-btn.playing .music-note {
+      animation: musicSpin 1s linear infinite;
+    }
+    @keyframes musicSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     .hotspot {
       position: absolute;
       z-index: 6;
@@ -93,17 +123,13 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
-    .opened .hotspot {
-      display: block;
-    }
-    /* Logo Location a sinistra */
+    .opened .hotspot { display: block; }
     .location-hotspot {
       left: 7%;
       top: 64%;
       width: 38%;
       height: 17%;
     }
-    /* Logo Conferma a destra */
     .confirm-hotspot {
       left: 55%;
       top: 64%;
@@ -139,6 +165,9 @@
     <section class="page inside" aria-label="Dettagli invito"></section>
     <section class="page front" aria-label="Busta, clicca per aprire"></section>
 
+    <audio id="bgMusic" src="assets/musica-ritornello.mp3" loop preload="auto"></audio>
+    <button class="music-btn" id="musicBtn" type="button" aria-label="Avvia o stoppa la musica"><span class="music-note">♪</span></button>
+
     <button class="open-zone" id="openInvite" type="button" aria-label="Clicca la busta per aprire">Apri</button>
     <a class="hotspot location-hotspot" href="https://www.google.com/search?q=villa+ciglietti&sca_esv=a82350b6429375af&sxsrf=ANbL-n63TLsoTFHTxX2kobssp8uvIFysFA%3A1780523123977&source=hp&ei=c6AgaoyKOeuN-d8P3PuRiQ8&iflsig=AFdpzrgAAAAAaiCug49pW1664wZTv08ArYNSYzEBoKEy&gs_ssp=eJzj4tVP1zc0TDbOMk02zDMxYLRSMagwNDa0TEs2t0w1MQABQyuDCgtDk8REC0MDcyNzY0tzIy_-ssycnESF5Mz0nMzUkpJMAHnYE0A&oq=villa+ciglietti&gs_lp=Egdnd3Mtd2l6Ig92aWxsYSBjaWdsaWV0dGkqAggAMgsQLhivARjHARiABDIFEAAYgAQyBRAAGIAEMgUQABiABDIGEAAYFhgeMgYQABgWGB4yAhAmMggQABiABBiiBDIFEAAY7wVIrydQAFj1GXAAeACQAQCYAeYBoAHPD6oBBjAuMTQuMbgBAcgBAPgBAZgCD6AC7xDCAgsQABiABBixAxiDAcICCxAuGIAEGLEDGIMBwgIREAAYgAQYigUYjQYYsQMYgwHCAggQABiABBixA8ICCxAuGIAEGMcBGNEDwgIjEC4YgAQYigUYjQYYsQMYgwEYxwEYrwEYmAUYngUYmQUYjgXCAg4QABiABBiKBRixAxiDAcICHRAuGIAEGLEDGIMBGMcBGK8BGJgFGJ4FGJkFGI4FwgIOEC4YgAQYsQMYxwEY0QPCAhEQLhiABBixAxjHARivARiOBcICCxAuGIAEGMcBGK8BwgIFEC4YgATCAh0QLhiDARivARjHARixAxiABBiYBRiZBRieBRiOBcICDhAuGIAEGMcBGK8BGI4FwgIOEC4YrwEYxwEYgAQYjgXCAhQQLhiABBixAxjHARivARiYBRiZBcICFBAuGK8BGMcBGLEDGIAEGJgFGJkFwgIOEC4YgAQYxwEYrwEYmAWYAwCSBwYwLjE0LjGgB8f2AbIHBjAuMTQuMbgH7xDCBwUyLTYuOcgHfIAIAQ&sclient=gws-wiz" target="_blank" rel="noopener" aria-label="Apri location">Location</a>
     <a class="hotspot confirm-hotspot" href="https://wa.me/3387732603?text=Grazie%2C%20per%20l%27%20invito%20.%20Ci%20sar%C3%B2%20%21" target="_blank" rel="noopener" aria-label="Conferma su WhatsApp">Conferma</a>
@@ -147,11 +176,45 @@
 
   <script>
     const card = document.getElementById('invito');
-    document.getElementById('openInvite').addEventListener('click', () => card.classList.add('opened'));
+    const music = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicBtn');
+
+    function updateMusicButton() {
+      musicBtn.classList.toggle('playing', !music.paused);
+    }
+
+    async function toggleMusic(event) {
+      event.stopPropagation();
+      if (music.paused) {
+        try { await music.play(); } catch (e) {}
+      } else {
+        music.pause();
+      }
+      updateMusicButton();
+    }
+
+    musicBtn.addEventListener('click', toggleMusic);
+
+    document.getElementById('openInvite').addEventListener('click', async () => {
+      card.classList.add('opened');
+      if (music.paused) {
+        try { await music.play(); } catch (e) {}
+      }
+      updateMusicButton();
+    });
+
     document.getElementById('backInvite').addEventListener('click', () => card.classList.remove('opened'));
+
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') card.classList.remove('opened');
     });
+
+    music.addEventListener('play', updateMusicButton);
+    music.addEventListener('pause', updateMusicButton);
+    music.addEventListener('ended', updateMusicButton);
+    updateMusicButton();
   </script>
 </body>
+</html>
+
 </html>
