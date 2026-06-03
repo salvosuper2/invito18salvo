@@ -165,7 +165,7 @@
     <section class="page inside" aria-label="Dettagli invito"></section>
     <section class="page front" aria-label="Busta, clicca per aprire"></section>
 
-    <audio id="bgMusic" src="assets/musica-ritornello.mp3" loop preload="auto" autoplay muted playsinline></audio>
+    <audio id="bgMusic" src="assets/musica-ritornello.mp3" autoplay loop preload="auto" playsinline></audio>
     <button class="music-btn" id="musicBtn" type="button" aria-label="Avvia o stoppa la musica"><span class="music-note">♪</span></button>
 
     <button class="open-zone" id="openInvite" type="button" aria-label="Clicca la busta per aprire">Apri</button>
@@ -184,29 +184,40 @@
       musicBtn.classList.toggle('playing', !music.paused);
     }
 
-    async function startMusicAutomatically() {
+    async function forceAutoplay() {
+      music.muted = false;
+      music.volume = 1;
+
       try {
         await music.play();
-
-        // unmute shortly after autoplay starts
-        setTimeout(() => {
-          music.muted = false;
-        }, 300);
-
       } catch (e) {
-        console.log('Autoplay bloccato dal browser');
+        // Alcuni browser bloccano l'audio automatico.
+        // In quel caso parte appena l'utente tocca/clicca qualsiasi punto della pagina.
       }
+
       updateMusicButton();
+    }
+
+    async function startAfterFirstInteraction() {
+      if (music.paused) {
+        music.muted = false;
+        music.volume = 1;
+        try { await music.play(); } catch (e) {}
+        updateMusicButton();
+      }
+
+      window.removeEventListener('click', startAfterFirstInteraction);
+      window.removeEventListener('touchstart', startAfterFirstInteraction);
+      window.removeEventListener('pointerdown', startAfterFirstInteraction);
     }
 
     async function toggleMusic(event) {
       event.stopPropagation();
 
       if (music.paused) {
-        try {
-          music.muted = false;
-          await music.play();
-        } catch (e) {}
+        music.muted = false;
+        music.volume = 1;
+        try { await music.play(); } catch (e) {}
       } else {
         music.pause();
       }
@@ -216,18 +227,19 @@
 
     musicBtn.addEventListener('click', toggleMusic);
 
-    window.addEventListener('load', startMusicAutomatically);
+    document.addEventListener('DOMContentLoaded', forceAutoplay);
+    window.addEventListener('load', forceAutoplay);
+    window.addEventListener('click', startAfterFirstInteraction);
+    window.addEventListener('touchstart', startAfterFirstInteraction, { passive: true });
+    window.addEventListener('pointerdown', startAfterFirstInteraction);
 
     document.getElementById('openInvite').addEventListener('click', async () => {
       card.classList.add('opened');
-
       if (music.paused) {
-        try {
-          music.muted = false;
-          await music.play();
-        } catch (e) {}
+        music.muted = false;
+        music.volume = 1;
+        try { await music.play(); } catch (e) {}
       }
-
       updateMusicButton();
     });
 
@@ -243,9 +255,11 @@
 
     music.addEventListener('play', updateMusicButton);
     music.addEventListener('pause', updateMusicButton);
+    music.addEventListener('ended', updateMusicButton);
 
+    forceAutoplay();
     updateMusicButton();
 
 </script>
 </body>
-</html>tml>
+</html>
